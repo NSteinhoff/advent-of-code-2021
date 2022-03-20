@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #define BUF_MAX 6 // 4 digits + newline + space for '\0' terminator
 
@@ -8,7 +9,7 @@ int main() {
     FILE *file = fopen("1.txt", "r");
 
     int current = 0;
-    int previous = 0;
+    int previous = INT_MAX;
     int count = 0;
 
     int window[3] = {0};
@@ -23,9 +24,8 @@ int main() {
                 current += window[i];
             }
 
-            if (previous)
-                if (current > previous)
-                    count++;
+            if (current > previous)
+                count++;
 
             previous = current;
         }
