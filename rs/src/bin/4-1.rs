@@ -8,12 +8,12 @@ fn final_score(input: &str) -> i32 {
         .filter_map(|s| s.parse::<i32>().ok())
         .collect();
 
-    let rows = (0..5)
-        .map(|i| (0..5).map(move |j| i * 5 + j).collect::<Vec<usize>>())
-        .collect::<Vec<Vec<usize>>>();
-    let cols = (0..5)
-        .map(|i| (0..5).map(move |j| i + j * 5).collect::<Vec<usize>>())
-        .collect::<Vec<Vec<usize>>>();
+    let rows: Vec<Vec<usize>> = (0..5)
+        .map(|row| (0..5).map(move |col| row * 5 + col).collect::<Vec<usize>>())
+        .collect();
+    let cols: Vec<Vec<usize>> = (0..5)
+        .map(|col| (0..5).map(move |row| col + row * 5).collect::<Vec<usize>>())
+        .collect();
 
     let mut boards: Vec<Vec<i32>> = vec![];
     for line in lines {
