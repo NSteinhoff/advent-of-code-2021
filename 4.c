@@ -32,8 +32,7 @@ static void array_push(Array *a, int number) {
 	}
 
 	size_t new_capacity = a->capacity * GROW_CAPACITY;
-	a->elements =
-	    realloc(a->elements, sizeof(int) * new_capacity);
+	a->elements = realloc(a->elements, sizeof(int) * new_capacity);
 	a->capacity = new_capacity;
 	array_push(a, number);
 }
@@ -125,8 +124,8 @@ int main() {
 				break;
 			if (boards.elements[j] == number) {
 				boards.elements[j] = -1;
-				if (is_winner(
-				        &boards.elements[board * LEN_BOARD])) {
+				if (is_winner(boards.elements +
+				              board * LEN_BOARD)) {
 					array_push(&winners, board);
 					array_push(&winning_numbers, number);
 				}
