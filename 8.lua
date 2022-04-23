@@ -44,18 +44,6 @@ function sort(s)
     return table.concat(t)
 end
 
-function trans(s, m)
-    local t = {}
-
-    for c in string.gmatch(s, "%a") do
-        t[#t + 1] = m[c] or "?"
-    end
-
-    return table.concat(t)
-end
-
-assert(trans("abc", { a = "x", b = "y", c = "z" }) == "xyz", "trans")
-
 function remove(s, p)
     local t = {}
 
