@@ -1,0 +1,16 @@
+section {
+    margin-bottom: 32px;
+}
+
+h1,
+h2,
+canvas,
+input,
+button,
+#page-number {
+    margin: 0.5em;
+}
+
+input[type="file"] {
+    display: block;
+}
