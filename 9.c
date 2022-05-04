@@ -92,6 +92,7 @@ static void two(FILE *file) {
 				basins[i_min] = basin_size;
 		}
 
+	free(map);
 	printf("Product of the three largest basins: %d * %d * %d = %d\n",
 	       basins[0], basins[1], basins[2],
 	       basins[0] * basins[1] * basins[2]);
