@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 #define STEPS 100
 #define ROWS 10

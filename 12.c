@@ -18,13 +18,13 @@ typedef struct Path Path;
 
 struct Path {
 	int node;
-	Path *next;
+	Path *tail;
 };
 
 static Path *path_add(Path *path, int node) {
 	Path *head = malloc(sizeof(Path));
 	head->node = node;
-	head->next = path;
+	head->tail = path;
 
 	return head;
 }
@@ -36,7 +36,7 @@ static bool path_includes(Path *path, int node) {
 	if (path->node == node)
 		return true;
 
-	return path_includes(path->next, node);
+	return path_includes(path->tail, node);
 }
 
 static bool is_major(char *name) {
@@ -101,21 +101,29 @@ static int walk(int node, Path *path, const Node *nodes,
                 bool adjacency_matrix[][MAX_NODES], size_t n_nodes,
                 bool revisit) {
 
-	if (strcmp(nodes[node].name, "end") == 0)
+	if (strcmp(nodes[node].name, "end") == 0) {
+		free(path);
+
 		return 1;
+	}
 
 	int paths = 0;
 	for (size_t i = 0; i < n_nodes; i++) {
 		if (!adjacency_matrix[node][i])
 			continue;
 
-		if (nodes[i].major || !path_includes(path, i))
-			paths += walk(i, path_add(path, i), nodes,
-			              adjacency_matrix, n_nodes, revisit);
-		else if (revisit && !nodes[i].terminal)
-			paths += walk(i, path_add(path, i), nodes,
-			              adjacency_matrix, n_nodes, false);
+		bool can_visit = nodes[i].major || !path_includes(path, i);
+		bool can_revisit = revisit && !nodes[i].terminal;
+
+		if (can_visit || can_revisit)
+			paths +=
+			    walk(i, path_add(path, i), nodes, adjacency_matrix,
+			         n_nodes, can_visit ? revisit : false);
 	}
+
+	// We have to free path here, because there is no other handle to the
+	// pointer. We are also done with it, so no need to keep it around
+	free(path);
 
 	return paths;
 }
