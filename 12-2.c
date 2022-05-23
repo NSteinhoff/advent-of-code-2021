@@ -151,24 +151,11 @@ static int num_paths(FILE *file, bool revisit) {
 	return paths;
 }
 
-static void one(FILE *file) {
-	printf("--- Part One ---\n");
-	int paths = num_paths(file, false);
-	printf("Paths: %d\n", paths);
-}
-
-static void two(FILE *file) {
-	printf("--- Part Two ---\n");
-	int paths = num_paths(file, true);
-	printf("Paths: %d\n", paths);
-}
-
 int main() {
 	FILE *file = fopen(INPUT, "r");
 
-	one(file);
-	rewind(file);
-	two(file);
+	int paths = num_paths(file, true);
+	printf("Paths: %d\n", paths);
 
 	return 0;
 }

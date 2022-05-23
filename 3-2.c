@@ -7,39 +7,6 @@
 #define MAX_BITS 12
 #define INPUT "3.txt"
 
-static void one(FILE *file) {
-	printf("--- Part One ---\n");
-	int counts[MAX_BITS] = {0};
-	int pos = 0;
-	int n_bits = 0;
-
-	for (char c; (c = fgetc(file)) != EOF;) {
-		switch (c) {
-		case '\n':
-			if (!n_bits)
-				n_bits = pos;
-			pos = 0;
-			continue;
-		case '1':
-			counts[pos]++;
-			break;
-		case '0':
-			counts[pos]--;
-			break;
-		}
-		pos++;
-	}
-
-	int g = 0;
-	int e = 0;
-	for (pos = 0; pos < n_bits; pos++) {
-		g = g << 1 | (counts[pos] >= 0 ? 1 : 0);
-		e = e << 1 | (counts[pos] >= 0 ? 0 : 1);
-	}
-
-	printf("=> %d\n", g * e);
-}
-
 static int bits_to_number(const char *bits) {
 	int number = 0;
 	for (int i = 0; i < (int)strlen(bits); i++) {
@@ -90,9 +57,8 @@ static const char *find_pattern(const int init_counts[2],
 	return matches[get_bit(counts, most)][0];
 }
 
-static void two(FILE *file) {
-	printf("--- Part Two ---\n");
-
+int main() {
+	FILE *file = fopen(INPUT, "r");
 	fseek(file, 0L, SEEK_END);
 	const size_t size = ftell(file);
 	fseek(file, 0L, SEEK_SET);
@@ -117,12 +83,5 @@ static void two(FILE *file) {
 	        bits_to_number(find_pattern(init_counts, init_matches, false)));
 
 	free(freeme);
-}
-
-int main() {
-	FILE *file = fopen(INPUT, "r");
-	one(file);
-	rewind(file);
-	two(file);
 	fclose(file);
 }

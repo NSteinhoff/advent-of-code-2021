@@ -33,37 +33,8 @@ static void propagate(uint8_t map[ROWS][COLS], size_t row, size_t col) {
 	}
 }
 
-static void one(FILE *file) {
-	printf("--- Part One ---\n");
-	uint8_t map[ROWS][COLS] = {0};
-
-	int c;
-	size_t n = 0;
-	while ((c = getc(file)) != EOF)
-		if (c != '\n') {
-			map[n / COLS][n % COLS] = c - '0';
-			n++;
-		}
-
-	int flashes = 0;
-	for (int step = 0; step < STEPS; step++) {
-		for (int i = 0; i < ROWS; i++)
-			for (int j = 0; j < COLS; j++)
-				propagate(map, i, j);
-
-		for (int i = 0; i < ROWS; i++)
-			for (int j = 0; j < COLS; j++)
-				if (map[i][j] > 9) {
-					flashes++;
-					map[i][j] = 0;
-				}
-	}
-
-	printf("Flashes: %u\n", flashes);
-}
-
-static void two(FILE *file) {
-	printf("--- Part Two ---\n");
+int main() {
+	FILE *file = fopen(INPUT, "r");
 	uint8_t map[ROWS][COLS] = {0};
 
 	int c;
@@ -91,12 +62,5 @@ static void two(FILE *file) {
 	}
 
 	printf("Synchronization: %d\n", step);
-}
-
-int main() {
-	FILE *file = fopen(INPUT, "r");
-	one(file);
-	rewind(file);
-	two(file);
 	fclose(file);
 }

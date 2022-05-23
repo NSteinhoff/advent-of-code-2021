@@ -98,27 +98,8 @@ static bool matches_all_signals(const char *mapping,
 	return true;
 }
 
-static void one(FILE *file) {
-	printf("--- Part One ---\n");
-
-	char in[N_SIGNALS][SIGNAL_LENGTH];
-	char out[N_OUTPUTS][SIGNAL_LENGTH];
-
-	int count = 0;
-	while (fscanf(file, "%s %s %s %s %s %s %s %s %s %s | %s %s %s %s",
-	              in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7],
-	              in[8], in[9], out[0], out[1], out[2], out[3]) != EOF)
-		for (int i = 0; i < N_OUTPUTS; i++) {
-			int len = strlen(out[i]);
-			if (len == 2 || len == 3 || len == 4 || len == 7)
-				count++;
-		}
-
-	printf("Count: %d\n", count);
-}
-
-static void two(FILE *file) {
-	printf("--- Part Two ---\n");
+int main(void) {
+	FILE *file = fopen(INPUT, "r");
 
 	// First we generate all the possible ways that the signal wires might
 	// be scrambled, which means all the permutations of the character
@@ -158,14 +139,6 @@ static void two(FILE *file) {
 	}
 
 	printf("Sum of outputs: %d\n", sum_of_outputs);
-}
-
-int main() {
-	FILE *file = fopen(INPUT, "r");
-
-	one(file);
-	rewind(file);
-	two(file);
 
 	fclose(file);
 
