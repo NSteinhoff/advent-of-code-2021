@@ -1,3 +1,5 @@
+import {ge} from './frameless.js';
+
 const CELL_SIZE = 16; // px
 const FONT_SIZE = (CELL_SIZE * 2) / 3;
 const GRID_COLUM_WIDTH = CELL_SIZE + 1;
@@ -21,7 +23,7 @@ export default (canvas, memory, opts) => {
     const update = (n) => {
         const numPages = Math.floor(memory.buffer.byteLength / BYTES_PER_PAGE);
         setPage(Math.min(n, numPages - 1));
-        const pageNumber = document.getElementById("memory-page");
+        const pageNumber = ge("memory-page");
         pageNumber.innerHTML = `${getPage() + 1} / ${numPages}`;
 
         draw(canvas, memory, opts);
@@ -86,8 +88,8 @@ const makeGrid = (canvas) => {
 };
 
 const makeButtons = (changePage) => {
-    document.getElementById("memory-previous").onclick = changePage(-1);
-    document.getElementById("memory-next").onclick = changePage(1);
+    ge("memory-previous").onclick = changePage(-1);
+    ge("memory-next").onclick = changePage(1);
 };
 
 const draw = (canvas, memory, { stackStart, heapStart, next }) => {

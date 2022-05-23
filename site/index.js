@@ -1,5 +1,6 @@
 import memoryMap from "./memory-map.js";
 import inputFile from "./input-file.js";
+import {ge} from "./frameless";
 
 const maxMemoryPages = 100;
 let curMemoryPages = 10;
@@ -65,7 +66,7 @@ const onFileLoad = (bytes) => {
 };
 
 // Create an file picker
-inputFile(document.getElementById("input"), onFileLoad);
+inputFile(ge("input"), onFileLoad);
 
 // Make the instance and memory globally available for debugging.
 window.wasm = { instance, memory };
@@ -78,7 +79,7 @@ const heapStart = __heap_base.value;
 let heapPtr = heapStart;
 const getHeapPtr = () => heapPtr;
 
-const updateMap = memoryMap(document.getElementById("memory-map"), memory, {
+const updateMap = memoryMap(ge("memory-map"), memory, {
     stackStart,
     heapStart,
     next: getHeapPtr,
