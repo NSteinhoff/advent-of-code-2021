@@ -25,6 +25,17 @@ void lines_add(Lines *lines, char *line) {
 
 	lines->lines[lines->len++] = line;
 }
+
+void draw(char *map, size_t cols, size_t clamp_rows, size_t clamp_cols) {
+	printf("\n");
+	for (size_t row = 0; row < clamp_rows; row++) {
+		for (size_t col = 0; col < clamp_cols; col++)
+			printf("%c", map[row * cols + col]);
+		printf("\n");
+	}
+	printf("\n");
+}
+
 int count(char *map, size_t rows, size_t cols) {
 	int c = 0;
 
@@ -74,6 +85,9 @@ int main(void) {
 	// line/column
 	size_t rows = fold_y * 2 + 1;
 	size_t cols = fold_x * 2 + 1;
+	// Clamp the map output
+	size_t clamp_rows = rows;
+	size_t clamp_cols = cols;
 
 	// Create a new empty map.
 	char *map = malloc(sizeof(char) * rows * cols);
@@ -92,7 +106,6 @@ int main(void) {
 		map[y * cols + x] = '#';
 	}
 
-	int folds = 0;
 	for (size_t i = folds_start; i < lines->len; i++) {
 		char axis;
 		size_t index;
@@ -111,7 +124,8 @@ int main(void) {
 						map[row * cols + col] = '*';
 					}
 			}
-			folds++;
+			clamp_cols = index;
+
 			break;
 		}
 		case 'y': {
@@ -124,22 +138,19 @@ int main(void) {
 						map[row * cols + col] = '*';
 					}
 			}
-			folds++;
+			clamp_rows = index;
+
 			break;
 		}
 		default:
 			printf("Unknown axis: %c\n", axis);
 			return 1;
 		}
-
-		printf("Folds: %2d -> %3d points\n", folds, count(map, rows, cols));
-		// stop after the first fold
-		if (folds)
-			break;
 	}
+
+	draw(map, cols, clamp_rows, clamp_cols);
 
 	free(map);
 	lines_free(lines);
-
 	return 0;
 }

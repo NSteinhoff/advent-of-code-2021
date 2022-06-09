@@ -1,9 +1,9 @@
 # Advent of Code 2021
 
 This repository contains solutions (or failures) for the 2021 edition of the
-[**Advent of Code**][advent] in multiple languages. Each day's problem is
-contained in a single file. There are no dependencies other than the standard
-libraries of the respective languages.
+[**Advent of Code**][advent] in multiple languages. Each solution is contained
+in a single file. There are no dependencies other than the standard libraries
+of the respective languages.
 
 ## Running the solutions
 
