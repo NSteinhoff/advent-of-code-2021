@@ -4,13 +4,13 @@
 
 int main() {
 	FILE *file = fopen("2.txt", "r");
-	char command[8];
+	char command[8];  // The longest command 'forward' has 7 characters + '\0'
 	int magnitude;
 
 	int depth = 0;
 	int horiz = 0;
 	int aim = 0;
-	while (fscanf(file, "%s %d\n", command, &magnitude) != EOF) {
+	while (fscanf(file, "%7s %d\n", command, &magnitude) != EOF) {
 		if (strcmp(command, "up") == 0)
 			aim -= magnitude;
 		if (strcmp(command, "down") == 0)

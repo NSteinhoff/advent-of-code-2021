@@ -13,7 +13,7 @@ help:
 	@echo "    clean                 Remove build artifacts."
 	@echo
 	@echo "Solutions"
-	@make list | column | while read l; do echo "    $$l"; done
+	@make list | column | while read l; do echo "\t$$l"; done
 
 list:
 	@find -E . \
@@ -40,3 +40,6 @@ c_%: %.c
 
 rs_%: ./rs/src/bin/%.rs
 	@cd ./rs && cargo run --bin $*
+
+js_%: %.js
+	@node $<

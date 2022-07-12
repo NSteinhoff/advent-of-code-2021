@@ -15,8 +15,8 @@ int main(void) {
 			generations[g][t] = 0;
 	}
 
-	for (int i; fscanf(file, "%d,", &i) != EOF;)
-		generations[0][i]++;
+	for (int t; fscanf(file, "%d,", &t) != EOF;)
+		generations[0][t]++;
 
 	for (int d = 1; d <= days; d++) {
 		for (int i = 0; i < MAX_TIMER; i++)

@@ -5,6 +5,15 @@
 #define INPUT "6.txt"
 
 
+//   0  1  2  3  4  5  6  7  8
+//  ---------------------------
+//  [0, 1, 1, 2, 1, 0, 0, 0, 0]
+//  [1, 1, 2, 1, 0, 0, 0, 0, 0]
+//  [1, 2, 1, 0, 0, 0, 1, 0, 1]
+//  [2, 1, 0, 0, 0, 1, 1, 1, 1]
+//  [1, 0, 0, 0, 1, 1, 3, 1, 2]
+
+
 int main(void) {
 	FILE *file = fopen(INPUT, "r");
 	const int days = 80;
@@ -15,8 +24,8 @@ int main(void) {
 			generations[g][t] = 0;
 	}
 
-	for (int i; fscanf(file, "%d,", &i) != EOF;)
-		generations[0][i]++;
+	for (int t; fscanf(file, "%d,", &t) != EOF;)
+		generations[0][t]++;
 
 	for (int d = 1; d <= days; d++) {
 		for (int i = 0; i < MAX_TIMER; i++)

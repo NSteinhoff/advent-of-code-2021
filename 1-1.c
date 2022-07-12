@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BUF_MAX 6 // 4 digits + newline + space for '\0' terminator
+#define LEN 6 // 4 digits + newline + space for '\0' terminator
 
 int main() {
 	FILE *file = fopen("1.txt", "r");
-	char line[BUF_MAX];
+	char line[LEN];
 
 	int current = 0;
 	int previous = INT_MAX;
 	int count = 0;
 
-	while (fgets(line, BUF_MAX, file)) {
+	while (fgets(line, LEN, file)) {
 		current = atoi(line);
 
 		if (current > previous)
