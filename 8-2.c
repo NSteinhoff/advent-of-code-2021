@@ -35,25 +35,26 @@ size_t n_permutations = 0;
 
 /// Swap two characters in place.
 static inline void swap(char *s, size_t a, size_t b) {
-	if (a == b)
-		return;
 	char tmp = s[a];
 	s[a] = s[b];
 	s[b] = tmp;
 }
 
-/// Create all permutations of the first `n` characters of the input string.
-/// abc -> bac -> cab -> acb -> bca -> cba
-/// ^^     ^ ^    ^^     ^ ^    ^^
-void permutate(char *pattern, size_t n) {
-	if (n <= 1) {
+/// Create all permutations of the first `k` characters of the input string.
+///
+/// See: [Heap's Algorithm](https://en.wikipedia.org/wiki/Heap%27s_algorithm)
+void permutate(char *pattern, size_t k) {
+	if (k == 1) {
+		// Output by recording the permutation
 		strcpy(permutations[n_permutations++], pattern);
 		return;
 	}
 
-	for (size_t i = 0; i < n; i++) {
-		permutate(pattern, n - 1);
-		swap(pattern, n % 2 == 0 ? i : 0, n - 1);
+	// Avoid an unnecessary swap
+	permutate(pattern, k - 1);
+	for (size_t i = 0; i < k - 1; i++) {
+		swap(pattern, k % 2 == 0 ? i : 0, k - 1);
+		permutate(pattern, k - 1);
 	}
 }
 

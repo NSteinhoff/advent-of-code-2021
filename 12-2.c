@@ -14,12 +14,10 @@ typedef struct {
 	char *name;
 } Node;
 
-typedef struct Path Path;
-
-struct Path {
+typedef struct Path {
 	int node;
-	Path *tail;
-};
+	struct Path *tail;
+} Path;
 
 static Path *path_add(Path *path, int node) {
 	Path *head = malloc(sizeof(Path));
@@ -59,7 +57,7 @@ static int find(const char *name, Node *nodes, size_t len) {
 	return -1;
 }
 
-static int add(const Node node, Node *nodes, size_t *len) {
+static int add_node(const Node node, Node *nodes, size_t *len) {
 	int node_idx = find(node.name, nodes, *len);
 
 	if (node_idx != -1)
@@ -71,7 +69,7 @@ static int add(const Node node, Node *nodes, size_t *len) {
 }
 
 static size_t parse(char *content, Node *nodes,
-                    bool adjacency_matrix[][MAX_NODES]) {
+		    bool adjacency_matrix[][MAX_NODES]) {
 	size_t n_nodes = 0;
 
 	for (char *line; (line = strsep(&content, "\n"));) {
@@ -81,14 +79,14 @@ static size_t parse(char *content, Node *nodes,
 		char *src_name = strsep(&line, "-");
 		char *dst_name = strsep(&line, "-");
 
-		int src_idx = add((Node){.major = is_major(src_name),
-		                         .terminal = is_terminal(src_name),
-		                         .name = src_name},
-		                  nodes, &n_nodes);
-		int dst_idx = add((Node){.major = is_major(dst_name),
-		                         .terminal = is_terminal(dst_name),
-		                         .name = dst_name},
-		                  nodes, &n_nodes);
+		int src_idx = add_node((Node){.major = is_major(src_name),
+					      .terminal = is_terminal(src_name),
+					      .name = src_name},
+				       nodes, &n_nodes);
+		int dst_idx = add_node((Node){.major = is_major(dst_name),
+					      .terminal = is_terminal(dst_name),
+					      .name = dst_name},
+				       nodes, &n_nodes);
 
 		adjacency_matrix[src_idx][dst_idx] = 1;
 		adjacency_matrix[dst_idx][src_idx] = 1;
@@ -98,8 +96,8 @@ static size_t parse(char *content, Node *nodes,
 }
 
 static int walk(int node, Path *path, const Node *nodes,
-                bool adjacency_matrix[][MAX_NODES], size_t n_nodes,
-                bool revisit) {
+		bool adjacency_matrix[][MAX_NODES], size_t n_nodes,
+		bool revisit) {
 
 	if (strcmp(nodes[node].name, "end") == 0) {
 		free(path);
@@ -116,13 +114,13 @@ static int walk(int node, Path *path, const Node *nodes,
 		bool can_revisit = revisit && !nodes[i].terminal;
 
 		if (can_visit || can_revisit)
-			paths +=
-			    walk(i, path_add(path, i), nodes, adjacency_matrix,
-			         n_nodes, can_visit ? revisit : false);
+			paths += walk(i, path_add(path, i), nodes,
+				      adjacency_matrix, n_nodes,
+				      can_visit ? revisit : false);
 	}
 
 	// We have to free path here, because there is no other handle to the
-	// pointer. We are also done with it, so no need to keep it around
+	// pointer. We are also done with it, so no need to keep it around.
 	free(path);
 
 	return paths;
@@ -136,7 +134,7 @@ static int num_paths(FILE *file, bool revisit) {
 	size_t bytes_read = fread(content, sizeof(char), size, file);
 	content[bytes_read] = '\0';
 
-	// Create the graph into an adjacency matrix
+	// Parse the graph into an adjacency matrix
 	Node nodes[MAX_NODES];
 	bool adjacency_matrix[MAX_NODES][MAX_NODES] = {0};
 	size_t n_nodes = parse(content, nodes, adjacency_matrix);
@@ -144,7 +142,7 @@ static int num_paths(FILE *file, bool revisit) {
 	// Walk the graph from the "start" node
 	int start = find("start", nodes, n_nodes);
 	int paths = walk(start, path_add(NULL, start), nodes, adjacency_matrix,
-	                 n_nodes, revisit);
+			 n_nodes, revisit);
 
 	free(content);
 
