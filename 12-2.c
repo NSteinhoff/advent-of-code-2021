@@ -15,11 +15,11 @@ typedef struct {
 } Node;
 
 typedef struct Path {
-	int node;
+	size_t node;
 	struct Path *tail;
 } Path;
 
-static Path *path_add(Path *path, int node) {
+static Path *path_add(Path *path, size_t node) {
 	Path *head = malloc(sizeof(Path));
 	head->node = node;
 	head->tail = path;
@@ -27,7 +27,7 @@ static Path *path_add(Path *path, int node) {
 	return head;
 }
 
-static bool path_includes(Path *path, int node) {
+static bool path_includes(Path *path, size_t node) {
 	if (!path)
 		return false;
 
@@ -49,23 +49,23 @@ static bool is_terminal(char *name) {
 	return (strcmp(name, "start") == 0 || strcmp(name, "end") == 0);
 }
 
-static int find(const char *name, Node *nodes, size_t len) {
+static size_t find(const char *name, Node *nodes, size_t len) {
 	for (size_t i = 0; i < len; i++)
 		if (strcmp(name, nodes[i].name) == 0)
 			return i;
 
-	return -1;
+	return SIZE_MAX;
 }
 
-static int add_node(const Node node, Node *nodes, size_t *len) {
-	int node_idx = find(node.name, nodes, *len);
+static size_t add_node(const Node node, Node *nodes, size_t *len) {
+	size_t node_idx = find(node.name, nodes, *len);
 
-	if (node_idx != -1)
+	if (node_idx != SIZE_MAX)
 		return node_idx;
 
-	nodes[*len] = node;
-
-	return (*len)++;
+	node_idx = (*len)++;
+	nodes[node_idx] = node;
+	return node_idx;
 }
 
 static size_t parse(char *content, Node *nodes,
@@ -79,14 +79,16 @@ static size_t parse(char *content, Node *nodes,
 		char *src_name = strsep(&line, "-");
 		char *dst_name = strsep(&line, "-");
 
-		int src_idx = add_node((Node){.major = is_major(src_name),
-					      .terminal = is_terminal(src_name),
-					      .name = src_name},
-				       nodes, &n_nodes);
-		int dst_idx = add_node((Node){.major = is_major(dst_name),
-					      .terminal = is_terminal(dst_name),
-					      .name = dst_name},
-				       nodes, &n_nodes);
+		size_t src_idx =
+			add_node((Node){.major = is_major(src_name),
+					.terminal = is_terminal(src_name),
+					.name = src_name},
+				 nodes, &n_nodes);
+		size_t dst_idx =
+			add_node((Node){.major = is_major(dst_name),
+					.terminal = is_terminal(dst_name),
+					.name = dst_name},
+				 nodes, &n_nodes);
 
 		adjacency_matrix[src_idx][dst_idx] = 1;
 		adjacency_matrix[dst_idx][src_idx] = 1;
@@ -95,9 +97,9 @@ static size_t parse(char *content, Node *nodes,
 	return n_nodes;
 }
 
-static int walk(int node, Path *path, const Node *nodes,
-		bool adjacency_matrix[][MAX_NODES], size_t n_nodes,
-		bool revisit) {
+static unsigned walk(size_t node, Path *path, const Node *nodes,
+		     bool adjacency_matrix[][MAX_NODES], size_t n_nodes,
+		     bool revisit) {
 
 	if (strcmp(nodes[node].name, "end") == 0) {
 		free(path);
@@ -105,7 +107,7 @@ static int walk(int node, Path *path, const Node *nodes,
 		return 1;
 	}
 
-	int paths = 0;
+	unsigned paths = 0;
 	for (size_t i = 0; i < n_nodes; i++) {
 		if (!adjacency_matrix[node][i])
 			continue;
@@ -126,9 +128,9 @@ static int walk(int node, Path *path, const Node *nodes,
 	return paths;
 }
 
-static int num_paths(FILE *file, bool revisit) {
+static unsigned num_paths(FILE *file, bool revisit) {
 	fseek(file, 0L, SEEK_END);
-	const size_t size = ftell(file);
+	const size_t size = (size_t)ftell(file);
 	fseek(file, 0L, SEEK_SET);
 	char *content = malloc(size + 1);
 	size_t bytes_read = fread(content, sizeof(char), size, file);
@@ -140,9 +142,9 @@ static int num_paths(FILE *file, bool revisit) {
 	size_t n_nodes = parse(content, nodes, adjacency_matrix);
 
 	// Walk the graph from the "start" node
-	int start = find("start", nodes, n_nodes);
-	int paths = walk(start, path_add(NULL, start), nodes, adjacency_matrix,
-			 n_nodes, revisit);
+	size_t start = find("start", nodes, n_nodes);
+	unsigned paths = walk(start, path_add(NULL, start), nodes,
+			      adjacency_matrix, n_nodes, revisit);
 
 	free(content);
 
@@ -152,8 +154,8 @@ static int num_paths(FILE *file, bool revisit) {
 int main() {
 	FILE *file = fopen(INPUT, "r");
 
-	int paths = num_paths(file, true);
-	printf("Paths: %d\n", paths);
+	unsigned paths = num_paths(file, true);
+	printf("Paths: %u\n", paths);
 
 	return 0;
 }
