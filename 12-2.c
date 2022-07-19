@@ -8,18 +8,21 @@
 #define INPUT "12.txt"
 #define MAX_NODES 100
 
+/// A node representing a cave. The name is a pointer into the input string.
 typedef struct {
 	bool major;
 	bool terminal;
-	char *name;
+	const char *name;
 } Node;
 
+/// Linked list of node indices representing a path through the cave system.
 typedef struct Path {
 	size_t node;
-	struct Path *tail;
+	const struct Path *tail;
 } Path;
 
-static Path *path_add(Path *path, size_t node) {
+/// Add a node to the path
+static Path *path_add(const Path *path, size_t node) {
 	Path *head = malloc(sizeof(Path));
 	head->node = node;
 	head->tail = path;
@@ -27,7 +30,8 @@ static Path *path_add(Path *path, size_t node) {
 	return head;
 }
 
-static bool path_includes(Path *path, size_t node) {
+/// Check if a node is in the path
+static bool path_includes(const Path *path, size_t node) {
 	if (!path)
 		return false;
 
@@ -37,18 +41,21 @@ static bool path_includes(Path *path, size_t node) {
 	return path_includes(path->tail, node);
 }
 
-static bool is_major(char *name) {
-	while (*name)
-		if (islower(*name++))
+/// Check if the a node's name identifies it as a major node.
+static bool is_major(const char *name) {
+	for (; *name; name++)
+		if (islower(*name))
 			return false;
 
 	return true;
 }
 
-static bool is_terminal(char *name) {
+/// Check if the a node's name identifies it as a terminal node.
+static bool is_terminal(const char *name) {
 	return (strcmp(name, "start") == 0 || strcmp(name, "end") == 0);
 }
 
+/// Find a node by name.
 static size_t find(const char *name, Node *nodes, size_t len) {
 	for (size_t i = 0; i < len; i++)
 		if (strcmp(name, nodes[i].name) == 0)
@@ -57,6 +64,7 @@ static size_t find(const char *name, Node *nodes, size_t len) {
 	return SIZE_MAX;
 }
 
+/// Add a node and return its index.
 static size_t add_node(const Node node, Node *nodes, size_t *len) {
 	size_t node_idx = find(node.name, nodes, *len);
 
@@ -68,6 +76,11 @@ static size_t add_node(const Node node, Node *nodes, size_t *len) {
 	return node_idx;
 }
 
+/// Parse input into nodes and the connection graph.
+///
+/// The graph is represented as an [adjacency matrix][1].
+///
+/// [1]: https://en.wikipedia.org/wiki/Adjacency_matrix
 static size_t parse(char *content, Node *nodes,
 		    bool adjacency_matrix[][MAX_NODES]) {
 	size_t n_nodes = 0;
@@ -76,8 +89,8 @@ static size_t parse(char *content, Node *nodes,
 		if (line[0] == '\0')
 			continue;
 
-		char *src_name = strsep(&line, "-");
-		char *dst_name = strsep(&line, "-");
+		const char *src_name = strsep(&line, "-");
+		const char *dst_name = strsep(&line, "-");
 
 		size_t src_idx =
 			add_node((Node){.major = is_major(src_name),
@@ -97,10 +110,13 @@ static size_t parse(char *content, Node *nodes,
 	return n_nodes;
 }
 
+/// Return the number of possible paths walking the graph starting from `node`.
 static unsigned walk(size_t node, Path *path, const Node *nodes,
 		     bool adjacency_matrix[][MAX_NODES], size_t n_nodes,
 		     bool revisit) {
-
+	// This is the base case of the recursion. We've reached the 'end'
+	// node, meaning that the path is complete. Return 1 to the caller to
+	// count this path.
 	if (strcmp(nodes[node].name, "end") == 0) {
 		free(path);
 
@@ -128,14 +144,8 @@ static unsigned walk(size_t node, Path *path, const Node *nodes,
 	return paths;
 }
 
-static unsigned num_paths(FILE *file, bool revisit) {
-	fseek(file, 0L, SEEK_END);
-	const size_t size = (size_t)ftell(file);
-	fseek(file, 0L, SEEK_SET);
-	char *content = malloc(size + 1);
-	size_t bytes_read = fread(content, sizeof(char), size, file);
-	content[bytes_read] = '\0';
-
+/// Return the number of paths through the cave system.
+static unsigned num_paths(char *content, bool revisit) {
 	// Parse the graph into an adjacency matrix
 	Node nodes[MAX_NODES];
 	bool adjacency_matrix[MAX_NODES][MAX_NODES] = {0};
@@ -146,16 +156,23 @@ static unsigned num_paths(FILE *file, bool revisit) {
 	unsigned paths = walk(start, path_add(NULL, start), nodes,
 			      adjacency_matrix, n_nodes, revisit);
 
-	free(content);
-
 	return paths;
 }
 
 int main() {
 	FILE *file = fopen(INPUT, "r");
+	fseek(file, 0L, SEEK_END);
+	const size_t size = (size_t)ftell(file);
+	fseek(file, 0L, SEEK_SET);
+	char *content = malloc(size + 1);
+	size_t bytes_read = fread(content, sizeof(char), size, file);
+	content[bytes_read] = '\0';
+	fclose(file);
 
-	unsigned paths = num_paths(file, true);
+	unsigned paths = num_paths(content, true);
 	printf("Paths: %u\n", paths);
+
+	free(content);
 
 	return 0;
 }
