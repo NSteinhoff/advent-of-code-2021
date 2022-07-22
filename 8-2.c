@@ -11,11 +11,11 @@
 #define N_SIGNALS 10
 #define N_PERMUTATIONS 5040 // 7 segments mean 7! permutations
 
-const char segments[SIGNAL_LENGTH] = "abcdefg";
+static const char segments[SIGNAL_LENGTH] = "abcdefg";
 
 /// Lookup table of the original singal strings. Each numeric index maps to the
 /// corresponding signal.
-const char *signals[N_SIGNALS] = {
+static const char *signals[N_SIGNALS] = {
 	/* 0 */ "abcefg",
 	/* 1 */ "cf",
 	/* 2 */ "acdeg",
@@ -30,8 +30,8 @@ const char *signals[N_SIGNALS] = {
 
 /// Array of all permutations of the segments. It's constant, but we generate
 /// it each time at the start of `main`.
-char permutations[N_PERMUTATIONS][SIGNAL_LENGTH];
-size_t n_permutations = 0;
+static char permutations[N_PERMUTATIONS][SIGNAL_LENGTH];
+static size_t n_permutations = 0;
 
 /// Swap two characters in place.
 static inline void swap(char *s, size_t a, size_t b) {
@@ -43,7 +43,7 @@ static inline void swap(char *s, size_t a, size_t b) {
 /// Create all permutations of the first `k` characters of the input string.
 ///
 /// See: [Heap's Algorithm](https://en.wikipedia.org/wiki/Heap%27s_algorithm)
-void permutate(char *pattern, size_t k) {
+static void permutate(char *pattern, size_t k) {
 	if (k == 1) {
 		// Output by recording the permutation
 		strcpy(permutations[n_permutations++], pattern);
@@ -75,7 +75,7 @@ void permutate(char *pattern, size_t k) {
 /// dbefcag dbefcag dbefcag
 /// abcdefg abcdefg abcdefg
 ///   c     a            f   -> caf -> acf -> 7
-int pattern_to_signal(const char *pattern, const char *mapping) {
+static int pattern_to_signal(const char *pattern, const char *mapping) {
 	// What is the length of the incoming pattern
 	size_t len = strlen(pattern);
 
@@ -115,7 +115,8 @@ int pattern_to_signal(const char *pattern, const char *mapping) {
 }
 
 /// Check if the mapping can decode all signals
-bool matches_all_signals(const char *mapping, char patterns[][SIGNAL_LENGTH]) {
+static bool matches_all_signals(const char *mapping,
+				char patterns[][SIGNAL_LENGTH]) {
 	int matches[N_SIGNALS] = {0};
 
 	for (int j = 0; j < N_SIGNALS; j++) {
@@ -140,9 +141,8 @@ int main(void) {
 
 	// First we generate all the possible ways that the signal wires might
 	// be scrambled, which means all the permutations of the character
-	// sequence of segments. There are 7! of those, so we generate them.
-	// `permutate` is not pure, so we need to pass it its own copy of the
-	// segments.
+	// sequence of segments. There are 7! of those.  `permutate()` is not
+	// pure, so we need to pass it its own copy of the segments.
 	char *tmp = strdup(segments);
 	permutate(tmp, N_SEGMENTS);
 	free(tmp);
@@ -168,8 +168,10 @@ int main(void) {
 				for (int j = 0; j < N_OUTPUTS; j++) {
 					int signal = pattern_to_signal(out[j],
 								       mapping);
-					output += signal *
-						  pow(10, N_OUTPUTS - j - 1);
+					output += signal * (j == 0   ? 1000
+							    : j == 1 ? 100
+							    : j == 2 ? 10
+								     : 1);
 				}
 				sum_of_outputs += output;
 

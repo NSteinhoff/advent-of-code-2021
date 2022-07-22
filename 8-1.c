@@ -18,7 +18,7 @@ int main(void) {
 	              in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7],
 	              in[8], in[9], out[0], out[1], out[2], out[3]) != EOF)
 		for (int i = 0; i < N_OUTPUTS; i++) {
-			int len = strlen(out[i]);
+			unsigned long len = strlen(out[i]);
 			if (len == 2 || len == 3 || len == 4 || len == 7)
 				count++;
 		}

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define INPUT "12.txt"
+#define INPUT "12-example.txt"
 #define MAX_NODES 100
 
 /// A node representing a cave. The name is a pointer into the input string. It
@@ -29,6 +29,17 @@ static Path *path_add(const Path *path, size_t node) {
 	head->tail = path;
 
 	return head;
+}
+
+static void path_print(const Path *path, const Node *nodes) {
+	char *pstr = strdup(")");
+
+	for (const Path *p = path; p; p = p->tail) {
+		asprintf(&pstr, "%s%s%s", p->tail ? "-" : "(",
+			 nodes[p->node].name, pstr);
+	}
+	printf("%s", pstr);
+	free(pstr);
 }
 
 /// Check if a node is in the path
@@ -114,9 +125,16 @@ static size_t parse(char *content, Node *nodes,
 /// Return the number of possible paths walking the graph starting from `node`.
 static unsigned walk(size_t node, Path *path, const Node *nodes,
 		     bool adjacency_matrix[][MAX_NODES], size_t n_nodes) {
+	static int depth = 0;
+	depth++;
+	printf("\n%*s-> %s ", (depth - 1) * 4, "", nodes[node].name);
+	path_print(path, nodes);
+
 	if (strcmp(nodes[node].name, "end") == 0) {
 		free(path);
 
+		depth--;
+		printf(" +1");
 		return 1;
 	}
 
@@ -134,6 +152,7 @@ static unsigned walk(size_t node, Path *path, const Node *nodes,
 	// pointer. We are also done with it, so no need to keep it around.
 	free(path);
 
+	depth--;
 	return paths;
 }
 
@@ -163,7 +182,7 @@ int main() {
 	fclose(file);
 
 	unsigned paths = num_paths(content);
-	printf("Paths: %u\n", paths);
+	printf("\nPaths: %u\n", paths);
 
 	free(content);
 
