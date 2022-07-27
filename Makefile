@@ -1,7 +1,7 @@
 .PHONY: help list clean
 
-CC = clang
-CFLAGS = -g
+CC 	:= clang
+CFLAGS 	:= $(CFLAGS) -g
 
 help:
 	@echo
@@ -35,7 +35,7 @@ lua_%: %.lua
 	@lua $<
 
 c_%: %.c
-	@$(CC) $< -o $*
+	@$(CC) $(CFLAGS) $< -o $*
 	@./$*; rm -rf ./$* ./$*.dSYM
 
 rs_%: ./rs/src/bin/%.rs
