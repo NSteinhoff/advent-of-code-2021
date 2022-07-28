@@ -2,13 +2,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <string.h>
 #include <unistd.h>
 
-#define INPUT "15-example.txt"
-// Convert milliseconds to nanoseconds
-#define MS(A) (A) * 1000000
-#define WATCH 0
+#define INPUT "15.txt"
 
 // Are we connected to a terminal? Set this at the start of `main()` as it does
 // not change over the course of the program.
@@ -33,8 +30,10 @@ typedef struct {
 
 typedef struct Queue {
 	Cell *head;
+	Cell *tail;
 } Queue;
 
+/// Pop the head of the queue. Complexity: O(1)
 static Cell *queue_pop(Queue *queue) {
 	if (!queue->head) {
 		return NULL;
@@ -43,9 +42,14 @@ static Cell *queue_pop(Queue *queue) {
 	Cell *head = queue->head;
 	queue->head = head->next_in_queue;
 
+	// The queue is now empty
+	if (!queue->head)
+		queue->tail = NULL;
+
 	return head;
 }
 
+/// Remove arbitrary element from the queue. Complexity: O(n)
 static Cell *queue_remove(Queue *queue, Cell *cell) {
 	if (!queue->head) {
 		return NULL;
@@ -53,6 +57,8 @@ static Cell *queue_remove(Queue *queue, Cell *cell) {
 
 	if (queue->head == cell) {
 		queue->head = cell->next_in_queue;
+		if (queue->tail == cell)
+			queue->tail = NULL;
 
 		return cell;
 	}
@@ -61,6 +67,9 @@ static Cell *queue_remove(Queue *queue, Cell *cell) {
 	     head = head->next_in_queue) {
 		if (head->next_in_queue == cell) {
 			head->next_in_queue = cell->next_in_queue;
+			if (queue->tail == cell)
+				queue->tail = NULL;
+
 			return cell;
 		}
 	}
@@ -68,15 +77,29 @@ static Cell *queue_remove(Queue *queue, Cell *cell) {
 	return NULL;
 }
 
+/// Push a new element onto the queue: O(n)
 static void queue_push(Queue *queue, Cell *cell) {
 	assert(queue);
 	assert(cell);
 
+	// Empty queue
 	if (!queue->head) {
+		assert(!queue->tail);
 		queue->head = cell;
+		queue->tail = cell;
+
 		return;
 	}
 
+	// Add at the end
+	if (cell->total == SIZE_MAX) {
+		queue->tail->next_in_queue = cell;
+		queue->tail = cell;
+
+		return;
+	}
+
+	// Add at the front
 	if (cell->total < queue->head->total) {
 		cell->next_in_queue = queue->head;
 		queue->head = cell;
@@ -84,11 +107,15 @@ static void queue_push(Queue *queue, Cell *cell) {
 		return;
 	}
 
+	// Add in the middle
 	for (Cell *head = queue->head; head; head = head->next_in_queue) {
 		if (!head->next_in_queue ||
 		    cell->total < head->next_in_queue->total) {
 			cell->next_in_queue = head->next_in_queue;
 			head->next_in_queue = cell;
+
+			if (queue->tail == head)
+				queue->tail = cell;
 
 			return;
 		}
@@ -150,9 +177,9 @@ static void test_queue() {
 }
 
 /// Pretty print a digit
-static void pprint(size_t cost, bool is_path, bool is_candidate) {
+static void pprint(size_t cost, bool is_path) {
 	if (tty && is_path)
-		printf("\033[1;%sm", is_candidate ? "34" : "35");
+		printf("\033[1;35m");
 
 	printf("%zu", cost);
 
@@ -237,29 +264,13 @@ static Map create_map(FILE *file) {
 			};
 		}
 
-	printf("Map: %zu x %zu\n", dimensions.y, dimensions.x);
+	printf("Map: %zu x %zu => %zu cells\n", dimensions.y, dimensions.x, dimensions.x * dimensions.y);
 	return (Map){.cells = cells, .dimensions = dimensions};
 }
 
-static void map_clear(const Map *map) {
-	assert(map);
-
-	// Move cursor up
-	printf("\033[%zu", map->dimensions.y +
-				   /* borders */ 2 +
-				   /* results */ 1);
-
-	// Clear to the end of the screen
-	printf("F\033[J");
-}
-
 /// Print map and highlight path when supported.
-static void map_print(const Map *map, const Cell *head, const Cell *candidate) {
+static void map_print(const Map *map, const Cell *head) {
 	assert(head);
-	static size_t n = 0;
-
-	if (n++ > 0 && tty)
-		map_clear(map);
 
 	for (size_t i = 0; i < map->dimensions.y * map->dimensions.x; i++) {
 		if (i == 0) {
@@ -275,9 +286,8 @@ static void map_print(const Map *map, const Cell *head, const Cell *candidate) {
 
 		if (i % map->dimensions.x == 0)
 			printf("|"); // left border
-		bool is_candidate = cell == candidate;
-		bool on_path = path_includes(head, cell) || is_candidate;
-		pprint(cell->cost, on_path, is_candidate);
+		bool on_path = path_includes(head, cell);
+		pprint(cell->cost, on_path);
 		if (i % map->dimensions.x == map->dimensions.x - 1)
 			printf("|\n"); // right border
 	}
@@ -287,17 +297,25 @@ static void map_print(const Map *map, const Cell *head, const Cell *candidate) {
 	for (size_t i = 0; i < map->dimensions.x; i++)
 		printf("-");
 	printf("+\n");
+}
 
-	printf("Risk(n=%zu): %zu\n", n, head ? head->total : 0);
-
-	if (WATCH && tty) {
-		struct timespec req = {.tv_nsec = MS(50), .tv_sec = 0};
-		nanosleep(&req, NULL);
+static void spinner(size_t count, size_t every) {
+	if (count % every == 0) {
+		char state = count / every % 4;
+		char spinner = state == 0   ? '|'
+			       : state == 1 ? '/'
+			       : state == 2 ? '-'
+					    : '\\';
+		if (tty && count > every)
+			printf("\033[F\033[K");
+		printf("%c %6zu\n", spinner, count);
 	}
 }
 
 /// Return the next cell to check
 static Cell *next(const Map *map, Cell *head, Queue *queue) {
+	static size_t i = 0;
+	spinner(++i, 100);
 	assert(map);
 	assert(head);
 	assert(queue);
@@ -318,9 +336,6 @@ static Cell *next(const Map *map, Cell *head, Queue *queue) {
 				queue, &map->cells[y * map->dimensions.x + x]);
 			if (!cell)
 				continue;
-
-			if (WATCH && tty)
-				map_print(map, head, cell);
 
 			assert(cell->came_from != head);
 
@@ -368,13 +383,13 @@ int main() {
 	Cell *head = next(&map, queue_pop(&queue), &queue);
 
 	// Iterate until the `head` is `target` or the queue is empty.
-	while (head != target && queue.head) {
-		if (WATCH && tty)
-			map_print(&map, head, NULL);
-
+	while (head != target && queue.head)
 		head = next(&map, head, &queue);
-	}
-	map_print(&map, head, NULL);
+
+	if (map.dimensions.x < 100)
+		map_print(&map, head);
+
+	printf("Risk: %zu\n", head->total);
 
 	// Cleanup is quite simple, because all the cells are contained in our
 	// array. The path and the queue are assembled from references to those
