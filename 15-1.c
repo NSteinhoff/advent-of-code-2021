@@ -47,9 +47,8 @@ static Cell *queue_pop(Queue *queue) {
 }
 
 static Cell *queue_remove(Queue *queue, Cell *cell) {
-	if (!queue->head) {
+	if (!queue->head)
 		return NULL;
-	}
 
 	if (queue->head == cell) {
 		queue->head = cell->next_in_queue;
