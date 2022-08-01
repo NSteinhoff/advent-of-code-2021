@@ -16,7 +16,7 @@ typedef enum {
 	TYPE_END,
 } Type;
 
-static char *type_names[TYPE_END] = {
+static const char *type_names[TYPE_END] = {
 	[LITERAL] = "Literal",
 	[OPERATOR] = "Operator",
 };
@@ -34,7 +34,7 @@ typedef enum {
 } Operator;
 
 // clang-format off
-static char *op_names[OPERATOR_END] = {
+static const char *op_names[OPERATOR_END] = {
 	[SUM] = "SUM",
 	[PROD] = "PROD",
 	[MIN] = "MIN",
@@ -53,7 +53,7 @@ typedef struct Packet {
 	union {
 		uint64_t value;
 		struct {
-			size_t nsub;
+			size_t n;
 			Operator op;
 			struct Packet *sub;
 		};
@@ -82,14 +82,15 @@ static const char *hex2binary[] = {
 // clang-format on
 
 /// Consume `n` bits from the string and return the value.
-static uint64_t consume(char **s, int n, size_t *bits_read) {
+static uint64_t consume(const char **const s, const int n,
+			size_t *const bits_read) {
 	assert(s);
 	assert(*s);
 	assert(bits_read);
 	uint64_t value = 0;
 
-	for (int i = 0; i < n; i++) {
-		if (*(*s)++ == '1') value++;
+	for (int i = 0; i < n; i++, (*s)++) {
+		if (**s == '1') value++;
 		if (i < n - 1) value <<= 1;
 	}
 
@@ -97,7 +98,7 @@ static uint64_t consume(char **s, int n, size_t *bits_read) {
 	return value;
 }
 
-static uint64_t read_value(char **s, size_t *bits_read) {
+static uint64_t read_value(const char **const s, size_t *const bits_read) {
 	assert(s);
 	assert(*s);
 	assert(bits_read);
@@ -113,16 +114,16 @@ static uint64_t read_value(char **s, size_t *bits_read) {
 	return value;
 }
 
-static Packet read_packet(char **s, size_t *bits_read) {
+static Packet read_packet(const char **const s, size_t *bits_read) {
 	assert(s);
 	assert(*s);
 	size_t packet_bits = 0;
 	if (!bits_read) bits_read = &packet_bits;
 
-	size_t version = consume(s, 3, &packet_bits);
-	size_t type = consume(s, 3, &packet_bits);
+	const size_t version = consume(s, 3, &packet_bits);
+	const size_t type = consume(s, 3, &packet_bits);
 	if (type == 4) {
-		uint64_t value = read_value(s, &packet_bits);
+		const uint64_t value = read_value(s, &packet_bits);
 
 		*bits_read += packet_bits;
 		return (Packet){.type = LITERAL,
@@ -133,8 +134,8 @@ static Packet read_packet(char **s, size_t *bits_read) {
 
 	size_t lenid = consume(s, 1, &packet_bits);
 	if (lenid) {
-		size_t nsub = (size_t)consume(s, 11, &packet_bits);
-		Packet *sub = malloc(sizeof(Packet) * nsub);
+		const size_t nsub = (size_t)consume(s, 11, &packet_bits);
+		Packet *const sub = malloc(sizeof(Packet) * nsub);
 		assert(sub);
 
 		size_t sub_bits_read = 0;
@@ -148,10 +149,10 @@ static Packet read_packet(char **s, size_t *bits_read) {
 				.version = version,
 				.bits = sub_bits_read,
 				.op = (Operator)type,
-				.nsub = nsub,
+				.n = nsub,
 				.sub = sub};
 	} else {
-		size_t nbits = consume(s, 15, &packet_bits);
+		const size_t nbits = consume(s, 15, &packet_bits);
 		size_t capacity = 1;
 		Packet *sub = malloc(sizeof(Packet) * capacity);
 		assert(sub);
@@ -173,16 +174,16 @@ static Packet read_packet(char **s, size_t *bits_read) {
 				.version = version,
 				.bits = packet_bits,
 				.op = (Operator)type,
-				.nsub = nsub,
+				.n = nsub,
 				.sub = sub};
 	}
 }
 
-static void indent(int depth) {
+static void indent(const int depth) {
 	if (depth) printf("%*s", depth * 4, " ");
 }
 
-static void print_packet(Packet packet, int depth) {
+static void print_packet(const Packet packet, const int depth) {
 	indent(depth);
 	printf("%s v%zu (%zu bits)", type_names[packet.type], packet.version,
 	       packet.bits);
@@ -190,67 +191,67 @@ static void print_packet(Packet packet, int depth) {
 		printf(": %llu\n", packet.value);
 	else {
 		printf(": [%s of %zu subpackets]\n", op_names[packet.op],
-		       packet.nsub);
+		       packet.n);
 		if (packet.sub)
-			for (size_t i = 0; i < packet.nsub; i++)
+			for (size_t i = 0; i < packet.n; i++)
 				print_packet(packet.sub[i], depth + 1);
 	}
 }
 
-static void free_packet(Packet packet) {
+static void free_packet(const Packet packet) {
 	if (packet.type == LITERAL) return;
 
-	for (size_t i = 0; i < packet.nsub; i++)
+	for (size_t i = 0; i < packet.n; i++)
 		free_packet(packet.sub[i]);
 	free(packet.sub);
 }
 
-static uint64_t evaluate_packet(Packet packet) {
+static uint64_t evaluate_packet(const Packet packet) {
 	if (packet.type == LITERAL) {
 		return packet.value;
 	}
 	assert(packet.sub);
 
 	// Recursively evaluate all subpackets of this operator packet.
-	uint64_t *values = malloc(sizeof(uint64_t) * packet.nsub);
+	uint64_t *const values = malloc(sizeof(uint64_t) * packet.n);
 	assert(values);
-	for (size_t i = 0; i < packet.nsub; i++)
+	for (size_t i = 0; i < packet.n; i++)
 		values[i] = evaluate_packet(packet.sub[i]);
 
 	uint64_t value = 0;
 	switch (packet.op) {
 	case SUM:
 		value = 0;
-		for (size_t i = 0; i < packet.nsub; i++)
+		for (size_t i = 0; i < packet.n; i++)
 			value += values[i];
 		break;
 	case PROD:
 		value = 1;
-		for (size_t i = 0; i < packet.nsub; i++)
+		for (size_t i = 0; i < packet.n; i++)
 			value *= values[i];
 		break;
 	case MIN:
-		assert(packet.nsub > 0);
+		assert(packet.n > 0);
 		value = values[0];
-		for (size_t i = 1; i < packet.nsub; i++)
+		for (size_t i = 1; i < packet.n; i++)
 			if (values[i] < value) value = values[i];
 		break;
 	case MAX:
-		assert(packet.nsub > 0);
+		assert(packet.n > 0);
 		value = values[0];
-		for (size_t i = 1; i < packet.nsub; i++)
+		for (size_t i = 1; i < packet.n; i++)
 			if (values[i] > value) value = values[i];
 		break;
 	case GREATER:
-		assert(packet.nsub == 2);
+		assert(packet.n == 2);
 		value = values[0] > values[1];
 		break;
 	case LESS:
-		assert(packet.nsub == 2);
+		assert(packet.n == 2);
 		value = values[0] < values[1];
 		break;
 	case EQUAL:
-		assert(packet.nsub == 2);
+		assert(packet.n == 2);
 		value = values[0] == values[1];
 		break;
 	case CONST:
@@ -262,7 +263,7 @@ static uint64_t evaluate_packet(Packet packet) {
 }
 
 int main() {
-	FILE *file = fopen(INPUT, "r");
+	FILE *const file = fopen(INPUT, "r");
 	size_t n = 0;
 	for (int c; (c = fgetc(file)) != EOF && c != '\n'; n++) {
 		hex[n] = (char)c;
@@ -273,8 +274,9 @@ int main() {
 	printf("HEX: %s\n", hex);
 	printf("BIN: %s\n", binary);
 
-	char *s = binary; // Grab a pointer to the start of the array. This
-			  // pointer will be advanced as the parse the packet.
+	const char *s =
+		binary; // Grab a pointer to the start of the array. This
+			// pointer will be advanced as the parse the packet.
 
 	Packet packet = read_packet(&s, 0);
 	print_packet(packet, 0);

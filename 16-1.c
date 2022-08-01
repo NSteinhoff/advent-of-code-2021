@@ -28,7 +28,7 @@ typedef struct Packet {
 	union {
 		uint64_t value;
 		struct {
-			size_t nsub;
+			size_t n;
 			struct Packet *sub;
 		};
 	};
@@ -62,8 +62,8 @@ static uint64_t consume(char **s, int n, size_t *bits_read) {
 	assert(bits_read);
 	uint64_t value = 0;
 
-	for (int i = 0; i < n; i++) {
-		if (*(*s)++ == '1') value++;
+	for (int i = 0; i < n; i++, (*s)++) {
+		if (**s == '1') value++;
 		if (i < n - 1) value <<= 1;
 	}
 
@@ -120,7 +120,7 @@ static Packet read_packet(char **s, size_t *bits_read) {
 		return (Packet){.type = OP,
 				.version = version,
 				.bits = sub_bits_read,
-				.nsub = nsub,
+				.n = nsub,
 				.sub = sub};
 	} else {
 		size_t nbits = consume(s, 15, &packet_bits);
@@ -142,7 +142,7 @@ static Packet read_packet(char **s, size_t *bits_read) {
 		return (Packet){.type = OP,
 				.version = version,
 				.bits = packet_bits,
-				.nsub = nsub,
+				.n = nsub,
 				.sub = sub};
 	}
 }
@@ -158,9 +158,9 @@ static void print_packet(Packet packet, int depth) {
 	if (packet.type == LIT)
 		printf(": %llu\n", packet.value);
 	else {
-		printf(": [%zu subpackets]\n", packet.nsub);
+		printf(": [%zu subpackets]\n", packet.n);
 		if (packet.sub)
-			for (size_t i = 0; i < packet.nsub; i++)
+			for (size_t i = 0; i < packet.n; i++)
 				print_packet(packet.sub[i], depth + 1);
 	}
 }
@@ -168,7 +168,7 @@ static void print_packet(Packet packet, int depth) {
 static void free_packet(Packet packet) {
 	if (packet.type == LIT) return;
 
-	for (size_t i = 0; i < packet.nsub; i++)
+	for (size_t i = 0; i < packet.n; i++)
 		free_packet(packet.sub[i]);
 	free(packet.sub);
 }
@@ -180,7 +180,7 @@ static size_t accumulate_versions(Packet packet) {
 	assert(packet.sub);
 
 	size_t version = packet.version;
-	for (size_t i = 0; i < packet.nsub; i++)
+	for (size_t i = 0; i < packet.n; i++)
 		version += accumulate_versions(packet.sub[i]);
 
 	return version;
