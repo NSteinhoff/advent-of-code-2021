@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "read-to-string.h"
+
 #define MAX_LINES 1000
-#define MAX_BITS 12
 #define INPUT "3.txt"
 
 static int bits_to_number(const char *bits) {
@@ -58,14 +59,8 @@ static const char *find_pattern(const int init_counts[2],
 }
 
 int main() {
-	FILE *file = fopen(INPUT, "r");
-	fseek(file, 0L, SEEK_END);
-	const size_t size = ftell(file);
-	fseek(file, 0L, SEEK_SET);
-	char *content = malloc(size + 1);
+	char *content = read_to_string(INPUT);
 	char *freeme = content;
-	const size_t bytes_read = fread(content, sizeof(char), size, file);
-	content[bytes_read] = '\0';
 
 	int init_counts[2] = {0};
 	const char *init_matches[2][MAX_LINES] = {0};
@@ -83,5 +78,4 @@ int main() {
 	        bits_to_number(find_pattern(init_counts, init_matches, false)));
 
 	free(freeme);
-	fclose(file);
 }

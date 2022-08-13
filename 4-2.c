@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "read-to-string.h"
+
 #define INPUT "4.txt"
 #define N_ROWS 5
 #define N_COLS 5
@@ -30,23 +32,6 @@ static bool check_board(int *board) {
 	return false;
 }
 
-bool mark_boards(int *boards, int len, int number, Winner *ret) {
-	int board = 0;
-
-	for (int i = 0; i < len; i++) {
-		if (boards[i] == number) {
-			board = i / LEN_BOARD;
-			boards[i] = -1;
-			if (check_board(boards + LEN_BOARD * board)) {
-				*ret = (Winner){.b = board, .n = number};
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
 static int calculate_score(const int *board, int number) {
 	int sum_unmarked = 0;
 	for (int i = 0; i < LEN_BOARD; i++) {
@@ -58,16 +43,8 @@ static int calculate_score(const int *board, int number) {
 }
 
 int main(void) {
-	// Read the input file into a dynamically allocated string buffer.
-	FILE *file = fopen(INPUT, "r");
-	fseek(file, 0L, SEEK_END);
-	size_t size = (size_t)ftell(file);
-	fseek(file, 0L, SEEK_SET);
-	char *content = malloc(size + 1);
+	char *content = read_to_string(INPUT);
 	char *tofree = content;
-	size_t bytes_read = fread(content, sizeof(char), size, file);
-	content[bytes_read] = '\0';
-	fclose(file);
 
 	// Setup the input data
 	int n_numbers = 0;

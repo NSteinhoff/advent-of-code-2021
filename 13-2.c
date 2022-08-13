@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "read-to-string.h"
+
 #define INPUT "13.txt"
 
 typedef struct {
@@ -10,14 +12,14 @@ typedef struct {
 	char **lines;
 } Lines;
 
-Lines *lines_new() { return calloc(sizeof(Lines), 1); }
+static Lines *lines_new() { return calloc(sizeof(Lines), 1); }
 
-void lines_free(Lines *lines) {
+static void lines_free(Lines *lines) {
 	free(lines->lines);
 	free(lines);
 }
 
-void lines_add(Lines *lines, char *line) {
+static void lines_add(Lines *lines, char *line) {
 	if (lines->len >= lines->cap)
 		lines->lines = realloc(lines->lines, sizeof(char *) * lines->cap
 		                                         ? (lines->cap *= 2)
@@ -26,7 +28,7 @@ void lines_add(Lines *lines, char *line) {
 	lines->lines[lines->len++] = line;
 }
 
-void draw(char *map, size_t cols, size_t clamp_rows, size_t clamp_cols) {
+static void draw(char *map, size_t cols, size_t clamp_rows, size_t clamp_cols) {
 	printf("\n");
 	for (size_t row = 0; row < clamp_rows; row++) {
 		for (size_t col = 0; col < clamp_cols; col++)
@@ -36,38 +38,16 @@ void draw(char *map, size_t cols, size_t clamp_rows, size_t clamp_cols) {
 	printf("\n");
 }
 
-int count(char *map, size_t rows, size_t cols) {
-	int c = 0;
-
-	for (size_t i = 0; i < rows * cols; i++)
-		if (map[i] == '#')
-			c++;
-
-	return c;
-}
-
 int main(void) {
-	FILE *file = fopen(INPUT, "r");
-	if (!file) {
-		perror(INPUT);
-		exit(EXIT_FAILURE);
-	}
-
-	// Find the number of bytes in the file.
-	fseek(file, 0L, SEEK_END);
-	const size_t size = ftell(file);
-	fseek(file, 0L, SEEK_SET);
-
-	// Allocate memory for the file contents + 1 for the null byte.
-	char *content = malloc(size + 1);
-	size_t bytes_read = fread(content, sizeof(char), size, file);
-	content[bytes_read] = '\0';
+	char *content = read_to_string(INPUT);
 
 	// Parse input into lines.
 	Lines *lines = lines_new();
 	for (char *line; (line = strsep(&content, "\n"));)
 		if (line[0])
 			lines_add(lines, line);
+
+	free(content);
 
 	// Determine the number of rows and columns from the first folds along
 	// each axis

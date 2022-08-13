@@ -3,25 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "read-to-string.h"
+
 #define INPUT "14.txt"
 #define N 26
 #define ITERATIONS 40
 #define C2I(C) (C) - 'A'
 #define I2C(C) (C) + 'A'
 
-static char *read() {
-	FILE *file = fopen(INPUT, "r");
-	fseek(file, 0L, SEEK_END);
-	size_t bytes = (size_t)ftell(file);
-	fseek(file, 0L, SEEK_SET);
-	char *content = malloc(bytes + 1);
-	fread(content, 1, bytes, file);
-	fclose(file);
-
-	return content;
-}
 int main() {
-	char *input = read();
+	char *input = read_to_string(INPUT);
 	char *freeme = input;
 	char *sequence = strsep(&input, "\n");
 
