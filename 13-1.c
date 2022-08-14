@@ -2,61 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lines.h"
+#include "read.h"
+
 #define INPUT "13.txt"
 
-typedef struct {
-	size_t cap;
-	size_t len;
-	char **lines;
-} Lines;
-
-Lines *lines_new() { return calloc(sizeof(Lines), 1); }
-
-void lines_free(Lines *lines) {
-	free(lines->lines);
-	free(lines);
-}
-
-void lines_add(Lines *lines, char *line) {
-	if (lines->len >= lines->cap)
-		lines->lines = realloc(lines->lines, sizeof(char *) * lines->cap
-		                                         ? (lines->cap *= 2)
-		                                         : 8);
-
-	lines->lines[lines->len++] = line;
-}
-int count(char *map, size_t rows, size_t cols) {
+static int count(char *map, size_t rows, size_t cols) {
 	int c = 0;
 
 	for (size_t i = 0; i < rows * cols; i++)
-		if (map[i] == '#')
-			c++;
+		if (map[i] == '#') c++;
 
 	return c;
 }
 
 int main(void) {
-	FILE *file = fopen(INPUT, "r");
-	if (!file) {
-		perror(INPUT);
-		exit(EXIT_FAILURE);
-	}
-
-	// Find the number of bytes in the file.
-	fseek(file, 0L, SEEK_END);
-	const size_t size = ftell(file);
-	fseek(file, 0L, SEEK_SET);
-
-	// Allocate memory for the file contents + 1 for the null byte.
-	char *content = malloc(size + 1);
-	size_t bytes_read = fread(content, sizeof(char), size, file);
-	content[bytes_read] = '\0';
-
-	// Parse input into lines.
-	Lines *lines = lines_new();
-	for (char *line; (line = strsep(&content, "\n"));)
-		if (line[0])
-			lines_add(lines, line);
+	char *content = read_to_string(INPUT);
+	Lines *lines = lines_from_string(content);
 
 	// Determine the number of rows and columns from the first folds along
 	// each axis
@@ -67,8 +29,7 @@ int main(void) {
 			sscanf(lines->lines[i], "fold along x=%lu", &fold_x);
 		if (!fold_y)
 			sscanf(lines->lines[i], "fold along y=%lu", &fold_y);
-		if (fold_x && fold_y)
-			break;
+		if (fold_x && fold_y) break;
 	}
 	// The paper is twice the size of the first fold plus the folded
 	// line/column
@@ -97,7 +58,7 @@ int main(void) {
 		char axis;
 		size_t index;
 		if (!sscanf(lines->lines[i], "fold along %c=%lu\n", &axis,
-		            &index))
+			    &index))
 			break;
 
 		switch (axis) {
@@ -106,7 +67,7 @@ int main(void) {
 				for (size_t col = index + 1; col < cols; col++)
 					if (map[row * cols + col] == '#') {
 						size_t new_col =
-						    index - (col - index);
+							index - (col - index);
 						map[row * cols + new_col] = '#';
 						map[row * cols + col] = '*';
 					}
@@ -119,7 +80,7 @@ int main(void) {
 				for (size_t col = 0; col < cols; col++)
 					if (map[row * cols + col] == '#') {
 						size_t new_row =
-						    index - (row - index);
+							index - (row - index);
 						map[new_row * cols + col] = '#';
 						map[row * cols + col] = '*';
 					}
@@ -127,15 +88,13 @@ int main(void) {
 			folds++;
 			break;
 		}
-		default:
-			printf("Unknown axis: %c\n", axis);
-			return 1;
+		default: printf("Unknown axis: %c\n", axis); return 1;
 		}
 
-		printf("Folds: %2d -> %3d points\n", folds, count(map, rows, cols));
+		printf("Folds: %2d -> %3d points\n", folds,
+		       count(map, rows, cols));
 		// stop after the first fold
-		if (folds)
-			break;
+		if (folds) break;
 	}
 
 	free(map);

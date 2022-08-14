@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "read-to-string.h"
+#include "read.h"
 
 #define INPUT "14-example.txt"
 #define N 26

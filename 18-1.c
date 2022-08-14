@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "read-to-string.h"
+#include "read.h"
 
 #define INPUT "18-example.txt"
 

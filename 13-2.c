@@ -2,31 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "read-to-string.h"
+#include "read.h"
+#include "lines.h"
 
 #define INPUT "13.txt"
-
-typedef struct {
-	size_t cap;
-	size_t len;
-	char **lines;
-} Lines;
-
-static Lines *lines_new() { return calloc(sizeof(Lines), 1); }
-
-static void lines_free(Lines *lines) {
-	free(lines->lines);
-	free(lines);
-}
-
-static void lines_add(Lines *lines, char *line) {
-	if (lines->len >= lines->cap)
-		lines->lines = realloc(lines->lines, sizeof(char *) * lines->cap
-		                                         ? (lines->cap *= 2)
-		                                         : 8);
-
-	lines->lines[lines->len++] = line;
-}
 
 static void draw(char *map, size_t cols, size_t clamp_rows, size_t clamp_cols) {
 	printf("\n");
@@ -40,14 +19,7 @@ static void draw(char *map, size_t cols, size_t clamp_rows, size_t clamp_cols) {
 
 int main(void) {
 	char *content = read_to_string(INPUT);
-
-	// Parse input into lines.
-	Lines *lines = lines_new();
-	for (char *line; (line = strsep(&content, "\n"));)
-		if (line[0])
-			lines_add(lines, line);
-
-	free(content);
+	Lines *lines = lines_from_string(content);
 
 	// Determine the number of rows and columns from the first folds along
 	// each axis
@@ -132,5 +104,6 @@ int main(void) {
 
 	free(map);
 	lines_free(lines);
+
 	return 0;
 }

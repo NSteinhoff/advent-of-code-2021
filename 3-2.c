@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "read-to-string.h"
+#include "read.h"
 
 #define MAX_LINES 1000
 #define INPUT "3.txt"

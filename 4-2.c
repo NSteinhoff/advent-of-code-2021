@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "read-to-string.h"
+#include "read.h"
 
 #define INPUT "4.txt"
 #define N_ROWS 5
