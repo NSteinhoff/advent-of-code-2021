@@ -48,7 +48,7 @@ readFile("1.txt", (_, data) => {
         .toString()
         .split("\n")
         .filter(Boolean)
-        .map((l) => Number.parseInt(l, 10));
+        .map(Number);
 
     const windows = zip(lines, lines.slice(1), lines.slice(2));
     const sums = map(windows, (w) => w.reduce((sum, v) => sum + v, 0));
